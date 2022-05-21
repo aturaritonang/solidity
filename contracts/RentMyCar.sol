@@ -11,6 +11,7 @@ contract RentCar {
         cars.push(Car({ name: "Car 1", price : 1, available : true }));
         cars.push(Car({ name: "Car 2", price : 2, available : true }));
         cars.push(Car({ name: "Car 3", price : 3, available : true }));
+        cars.push(Car({ name: "Car 4", price : 2, available : true }));
     }
 
     struct Car {
