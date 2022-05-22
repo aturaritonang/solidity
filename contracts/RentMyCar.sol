@@ -1,7 +1,8 @@
+// Price of rent base on Woi
 //SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.7.0;
-// import "@openzeppelin/contracts/utils/Strings.sol";
+pragma experimental ABIEncoderV2;
 
 contract RentCar {
 
@@ -68,18 +69,34 @@ contract RentCar {
         string memory names; 
         for(uint i = 0; i < cars.length; i++){
             string memory strAvailable;
+            
             if( cars[i].available ) {
                 strAvailable = 'Yes';
             } else {
                 strAvailable = 'No';
             }
+
             string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', cars[i].price, ' Wei, Available: ', strAvailable));
+
             if(i < cars.length - 1){
                 name = string(abi.encodePacked(name, ', '));
             }
+
             names = string(abi.encodePacked(names, name));
         }
         return names;
+    }
+
+    function checkCar(string memory _name) external view returns(Car memory){
+        Car memory car;
+        for(uint i = 0; i < cars.length; i++) {
+            string memory name = cars[i].name;
+            if(keccak256(bytes(name)) == keccak256(bytes(_name))) {
+                car = cars[i];
+                break;
+            }
+        }
+        return car;
     }
 
     function checkAvailable(string memory _carName) external isNotOwner {
