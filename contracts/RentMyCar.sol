@@ -29,10 +29,10 @@ contract RentCar is Ownable, Utilities {
     constructor(){
         // owner = msg.sender;
         open = true;
-        cars.push(Car({ name: "Avanza 1", price : 1000000 wei, available : true, customer: address(0) }));
-        cars.push(Car({ name: "Avanza 2", price : 1000000 wei, available : false, customer: address(0) }));
-        cars.push(Car({ name: "Ayla 1", price : 900000 wei, available : true, customer: address(0) }));
-        cars.push(Car({ name: "Ayla 2", price : 900000 wei, available : true, customer: address(0) }));
+        cars.push(Car({ name: "Avanza 1", price : 1.2 ether, available : true, customer: address(0) }));
+        cars.push(Car({ name: "Avanza 2", price : 1.2 ether, available : false, customer: address(0) }));
+        cars.push(Car({ name: "Ayla 1", price : 1 ether, available : true, customer: address(0) }));
+        cars.push(Car({ name: "Ayla 2", price : 1 ether, available : true, customer: address(0) }));
     }
 
     modifier isOpenStore {
@@ -84,7 +84,8 @@ contract RentCar is Ownable, Utilities {
                 strAvailable = 'No';
             }
 
-            string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei, Available: ', strAvailable, ', Customer: ', toAsciiString(cars[i].customer)));
+            // string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei, Available: ', strAvailable, ', Customer: ', toAsciiString(cars[i].customer)));
+            string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ', Available: ', strAvailable));
 
             if(i < cars.length - 1){
                 name = string(abi.encodePacked(name, ', '));
@@ -92,14 +93,14 @@ contract RentCar is Ownable, Utilities {
 
             names = string(abi.encodePacked(names, name));
         }
-        return names;
+        return string(names);
     }
 
     function checkACar(string memory _name) public view isOpenStore returns(string memory){
         string memory result = "Car not available.";
         for(uint i = 0; i < cars.length; i++){
                 if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].available) {
-                    result = string(abi.encodePacked('Your car is available. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei'));
+                    result = string(abi.encodePacked('Your car is available. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price)));
                 }
             }
         return result;
@@ -112,7 +113,7 @@ contract RentCar is Ownable, Utilities {
             
             if( cars[i].available ) {
 
-                string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei, Available: ', strAvailable));
+                string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ', Available: ', strAvailable));
                 // string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Available: ', strAvailable));
 
                 if(i < cars.length - 1){
@@ -134,7 +135,7 @@ contract RentCar is Ownable, Utilities {
                     emit payARent(msg.sender, msg.value);
                     cars[i].available = false;
                     cars[i].customer = msg.sender;
-                    result = string(abi.encodePacked('You rent a car. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei'));
+                    result = string(abi.encodePacked('You rent a car. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price)));
                 }
             }
         }
@@ -144,7 +145,7 @@ contract RentCar is Ownable, Utilities {
     function validationFirst(string memory _name, uint _days) private view returns (bool) {
         for(uint i = 0; i < cars.length; i++){
             if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name))) {
-                if(cars[i].customer == msg.sender || (cars[i].price * _days) < msg.value){
+                if(cars[i].customer == msg.sender || (cars[i].price * _days) > msg.value){
                     return false;
                 }
             }
