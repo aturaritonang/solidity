@@ -27,7 +27,7 @@ contract RentCar is Ownable, Utilities {
     Car[] public cars;
 
     constructor(){
-        owner = msg.sender;
+        // owner = msg.sender;
         open = true;
         cars.push(Car({ name: "Avanza 1", price : 1000000 wei, available : true, customer: address(0) }));
         cars.push(Car({ name: "Avanza 2", price : 1000000 wei, available : false, customer: address(0) }));
@@ -73,7 +73,7 @@ contract RentCar is Ownable, Utilities {
         return true;
     }
 
-    function checkAllCar() public view isOpenStore returns(string memory){
+    function checkAllCar() public view isOpenStore isOwner returns(string memory){
         string memory names; 
         for(uint i = 0; i < cars.length; i++){
             string memory strAvailable;
@@ -84,7 +84,7 @@ contract RentCar is Ownable, Utilities {
                 strAvailable = 'No';
             }
 
-            string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', cars[i].price, ' Wei, Available: ', strAvailable));
+            string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei, Available: ', strAvailable, ', Customer: ', toAsciiString(cars[i].customer)));
 
             if(i < cars.length - 1){
                 name = string(abi.encodePacked(name, ', '));
@@ -95,6 +95,16 @@ contract RentCar is Ownable, Utilities {
         return names;
     }
 
+    function checkACar(string memory _name) public view isOpenStore returns(string memory){
+        string memory result = "Car not available.";
+        for(uint i = 0; i < cars.length; i++){
+                if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].available) {
+                    result = string(abi.encodePacked('Your car is available. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei'));
+                }
+            }
+        return result;
+    }
+
     function checkAvailable() public view returns(string memory){
         string memory names; 
         for(uint i = 0; i < cars.length; i++){
@@ -102,7 +112,7 @@ contract RentCar is Ownable, Utilities {
             
             if( cars[i].available ) {
 
-                string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ', Available: ', strAvailable));
+                string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei, Available: ', strAvailable));
                 // string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Available: ', strAvailable));
 
                 if(i < cars.length - 1){
@@ -115,26 +125,26 @@ contract RentCar is Ownable, Utilities {
         return names;
     }
 
-    function rentACar(string memory _name) payable external isNotOwner returns(string memory){
+    function rentACar(string memory _name, uint _days) payable external isNotOwner returns(string memory){
         string memory result = "Sorry, process failed. One car one customer or payment below of price.";
-        if(validationFirst(_name)){
+        if(validationFirst(_name, _days)){
             for(uint i = 0; i < cars.length; i++){
                 if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].available && cars[i].customer == address(0)) {
                     owner.transfer(msg.value);
                     emit payARent(msg.sender, msg.value);
                     cars[i].available = false;
                     cars[i].customer = msg.sender;
-                    result = string(abi.encodePacked('You rent a car. Name: ', cars[i].name, ', Price: ', cars[i].price, ' Wei'));
+                    result = string(abi.encodePacked('You rent a car. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei'));
                 }
             }
         }
         return result;
     }
 
-    function validationFirst(string memory _name) private view returns (bool) {
+    function validationFirst(string memory _name, uint _days) private view returns (bool) {
         for(uint i = 0; i < cars.length; i++){
             if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name))) {
-                if(cars[i].customer == msg.sender || cars[i].price < msg.value){
+                if(cars[i].customer == msg.sender || (cars[i].price * _days) < msg.value){
                     return false;
                 }
             }
