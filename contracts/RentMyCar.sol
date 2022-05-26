@@ -101,58 +101,32 @@ contract RentCar is Ownable, Utilities {
     }
 
 
-    // function checkACar(string memory _name) public view isOpenStore returns(string memory){
-    //     string memory result = "Car not available.";
-    //     for(uint i = 0; i < cars.length; i++){
-    //             if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].available) {
-    //                 result = string(abi.encodePacked('Your car is available. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price)));
-    //             }
-    //         }
-    //     return result;
-    // }
-
-    function checkACar(string memory _name) public view isOpenStore returns(Car memory){
-        Car memory result;
+    function checkACar(string memory _name) public view isOpenStore returns(string memory){
+        string memory result = "Car not available.";
         for(uint i = 0; i < cars.length; i++){
                 if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].available) {
-                    // result = string(abi.encodePacked('Your car is available. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price)));
-                    result = cars[i];
+                    result = string(abi.encodePacked('Your car is available. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price)));
                 }
             }
         return result;
     }
 
 
-    // function checkAvailable() public view returns(string memory){
-    //     string memory names; 
-    //     for(uint i = 0; i < cars.length; i++){
-    //         string memory strAvailable;
-            
-    //         if( cars[i].available ) {
-
-    //             string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ', Available: ', strAvailable));
-    //             // string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Available: ', strAvailable));
-
-    //             if(i < cars.length - 1){
-    //                 name = string(abi.encodePacked(name, ', '));
-    //             }
-
-    //             names = string(abi.encodePacked(names, name));
-    //         }
-    //     }
-    //     return names;
-    // }
-
-    function checkAvailable() public view returns(Car[] memory){
-        Car[] memory names = new Car[]; 
-        // uint count = 0;
+    function checkAvailable() public view returns(string memory){
+        string memory names; 
         for(uint i = 0; i < cars.length; i++){
+            string memory strAvailable;
+            
             if( cars[i].available ) {
-                // names.push(Car({name: cars[i].name, price : cars[i].price, available : cars[i].available, customer: cars[i].customer}));
-                // Car memory car = Car({ name: cars[i].name, price : cars[i].price, available : cars[i].available, customer: cars[i].customer });
-                // names.push(Car({ name: "Avanza 1", price : 1.2 ether, available : true, customer: address(0)}));
-                // names[count] = new Car(cars[i]);
-                // count++;
+
+                string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ', Available: ', strAvailable));
+                // string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Available: ', strAvailable));
+
+                if(i < cars.length - 1){
+                    name = string(abi.encodePacked(name, ', '));
+                }
+
+                names = string(abi.encodePacked(names, name));
             }
         }
         return names;
