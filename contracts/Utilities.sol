@@ -23,7 +23,7 @@ contract Utilities {
             _i /= 10;
         }
       return string(bstr);
-   }
+    }
 
     function toAsciiString(address x) internal pure returns (string memory) {
         bytes memory s = new bytes(40);

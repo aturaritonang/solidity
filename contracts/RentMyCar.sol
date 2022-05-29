@@ -1,4 +1,3 @@
-// Price of rent base on Woi
 //SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.7.0;
@@ -9,9 +8,10 @@ import "./Utilities.sol";
 
 contract RentCar is Ownable, Utilities {
 
-    // address payable public owner;
+    uint grandTotalAmmount;
 
-    bool public open;
+    event SmartContractSet(address indexed oldOwner, address indexed newOwner);
+    event payARent(address customer, uint fee);
 
     struct Car {
         string name;
@@ -20,38 +20,18 @@ contract RentCar is Ownable, Utilities {
         address customer; 
     }
 
-    enum availability { Yes, No, All }
-
-    event payARent (address customer, uint fee);
-
     Car[] public cars;
 
     constructor(){
-        // owner = msg.sender;
-        open = true;
+        grandTotalAmmount = 0;
         cars.push(Car({ name: "Avanza 1", price : 1.2 ether, available : true, customer: address(0) }));
         cars.push(Car({ name: "Avanza 2", price : 1.2 ether, available : false, customer: address(0) }));
         cars.push(Car({ name: "Ayla 1", price : 1 ether, available : true, customer: address(0) }));
         cars.push(Car({ name: "Ayla 2", price : 1 ether, available : true, customer: address(0) }));
     }
 
-    modifier isOpenStore {
-        require(open == true, "Sorry, store is closed!");
-        _;
-    }
-
-    function OpenStore() public isOwner returns(string memory) {
-        open = true;
-        return "Store is open.";
-    }
-
-    function CloseStore() public isOwner returns(string memory){
-        open = false;
-        return "Store is close.";
-    }
-
     function addCar(string memory _name, uint _price, bool _available) external isOwner returns(string memory) {
-        if(canAddNew(_name)){
+        if(!carExist(_name)){
             Car memory newCar = Car({
                 name : _name,
                 price : _price,
@@ -64,52 +44,61 @@ contract RentCar is Ownable, Utilities {
         return string(abi.encodePacked(_name, ' not successfully added because it is already exist.'));
     }
 
-    function canAddNew(string memory _name) private view returns (bool) {
-        for(uint i = 0; i < cars.length; i++){          
-            if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name))) {
-                return false;
+    function updateCar(string memory _name, uint _price, bool _available) external isOwner returns(string memory) {
+        bool success = false;
+        if(carExist(_name)) {
+            for(uint i = 0; i < cars.length; i++){
+                if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].customer == address(0)){
+                    cars[i].price = _price;
+                    cars[i].available = _available;
+                    success = true;
+                }
+            }
+            if(success){
+                return string(abi.encodePacked(_name, ' already updated.'));
             }
         }
-        return true;
+        return string(abi.encodePacked(_name, ' not successfully car does not exist or already rented.'));
     }
 
-    // function checkAllCar() public view isOpenStore isOwner returns(string memory){
-    //     string memory names; 
-    //     for(uint i = 0; i < cars.length; i++){
-    //         string memory strAvailable;
-            
-    //         if( cars[i].available ) {
-    //             strAvailable = 'Yes';
-    //         } else {
-    //             strAvailable = 'No';
-    //         }
+    function getBalance() public view isOwner returns(uint256){
+        return grandTotalAmmount;
+    }
 
-    //         // string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ' Wei, Available: ', strAvailable, ', Customer: ', toAsciiString(cars[i].customer)));
-    //         string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ', Available: ', strAvailable));
+    function withDraw() public payable isOwner{
+        owner.transfer(grandTotalAmmount);
+        grandTotalAmmount = 0;
+    }
 
-    //         if(i < cars.length - 1){
-    //             name = string(abi.encodePacked(name, ', '));
-    //         }
+    function carExist(string memory _name) private view returns (bool) {
+        for(uint i = 0; i < cars.length; i++){
+            if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name))) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-    //         names = string(abi.encodePacked(names, name));
-    //     }
-    //     return string(names);
-    // }
-
-    function checkAllCar() public view isOpenStore isOwner returns(Car[] memory){
+    function checkAllCar() public view isOwner returns(Car[] memory){
         return cars;
     }
 
+    function checkACar(string memory _name) public view returns(string memory, string memory, uint){
+        string memory status = "Sorry, not avaiable";
+        string memory name = "No Name";
+        uint price = 0;
 
-    function checkACar(string memory _name) public view isOpenStore returns(string memory){
-        string memory result = "Car not available.";
         for(uint i = 0; i < cars.length; i++){
-                if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].available) {
-                    result = string(abi.encodePacked('Your car is available. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price)));
-                }
+            if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].available) {
+                // result = string(abi.encodePacked('Your car is available. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price)));
+                status = "Congrats, Available";
+                name = _name;
+                price = cars[i].price;
             }
-        return result;
+        }
+        return (status, name, price);
     }
+
 
 
     function checkAvailable() public view returns(string memory){
@@ -117,9 +106,30 @@ contract RentCar is Ownable, Utilities {
         for(uint i = 0; i < cars.length; i++){
             string memory strAvailable;
             
-            if( cars[i].available ) {
-
+            if( cars[i].available) {
+                strAvailable = "Yes";
                 string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price), ', Available: ', strAvailable));
+                // string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Available: ', strAvailable));
+
+                if(i < cars.length - 1){
+                    name = string(abi.encodePacked(name, ', '));
+                }
+
+                names = string(abi.encodePacked(names, name));
+            }
+        }
+        return names;
+    }
+
+    function checkCarsYouRented() public view returns(string memory){
+        string memory names; 
+        for(uint i = 0; i < cars.length; i++){
+
+            address yourAddres = msg.sender;
+            
+            if( cars[i].customer == yourAddres) {
+
+                string memory name = string(abi.encodePacked('Name: ', cars[i].name));
                 // string memory name = string(abi.encodePacked('Name: ', cars[i].name, ', Available: ', strAvailable));
 
                 if(i < cars.length - 1){
@@ -134,11 +144,15 @@ contract RentCar is Ownable, Utilities {
 
     function rentACar(string memory _name, uint _days) payable external isNotOwner returns(string memory){
         string memory result = "Sorry, process failed. One car one customer or underpayment.";
-        if(validationFirst(_name, _days)){
+        if(oneCustumerOneCar() && checkPayment(_name, _days)){
             for(uint i = 0; i < cars.length; i++){
                 if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && cars[i].available && cars[i].customer == address(0)) {
-                    owner.transfer(msg.value);
-                    emit payARent(msg.sender, msg.value);
+                    uint checkOutAmount = msg.value;
+                    emit payARent(msg.sender, checkOutAmount);
+                    grandTotalAmmount += checkOutAmount;
+
+                    // owner.transfer(msg.value);
+                    // emit payARent(msg.sender, msg.value);
                     cars[i].available = false;
                     cars[i].customer = msg.sender;
                     result = string(abi.encodePacked('You rent a car. Name: ', cars[i].name, ', Price: ', uint2str(cars[i].price)));
@@ -148,12 +162,21 @@ contract RentCar is Ownable, Utilities {
         return result;
     }
 
-    function validationFirst(string memory _name, uint _days) private view returns (bool) {
+    function oneCustumerOneCar() private view returns (bool) {
+        address yourAddress = msg.sender;
         for(uint i = 0; i < cars.length; i++){
-            if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name))) {
-                if(cars[i].customer == msg.sender || (cars[i].price * _days) > msg.value){
-                    return false;
-                }
+            if(cars[i].customer == yourAddress){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function checkPayment(string memory _name, uint _days) private view returns (bool) {
+        uint payment = msg.value;
+        for(uint i = 0; i < cars.length; i++){
+            if(keccak256(bytes(cars[i].name)) == keccak256(bytes(_name)) && (cars[i].price * _days) > payment) {
+                return false;
             }
         }
         return true;
@@ -166,6 +189,7 @@ contract RentCar is Ownable, Utilities {
                 cars[i].available = true;
                 cars[i].customer = address(0);
                 result = "Thank you.";
+                break;
             }
         }
         return result;
